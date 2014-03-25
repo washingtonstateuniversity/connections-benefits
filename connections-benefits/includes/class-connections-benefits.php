@@ -20,6 +20,10 @@ if (!class_exists('Connections_benefits')) {
 				// Since we're using a custom field, we need to add our own sanitization method.
 				add_filter( 'cn_meta_sanitize_field-entry_benefit', array( __CLASS__, 'sanitize') );
 				add_filter( 'cncsv_map_import_fields', array( __CLASS__, 'map_import_fields' ));
+				add_filter( 'cncsv_import_fields', array( __CLASS__, 'import_fields' ), 10, 2);
+				
+				
+				
             }
 			// Register the metabox and fields.
 			add_action( 'cn_metabox', array( __CLASS__, 'registerMetabox') );
@@ -60,9 +64,22 @@ if (!class_exists('Connections_benefits')) {
 
 			return $fields;
 		}
-		
-		
-		
+		public static function import_fields( $entry, $row ){
+			if( isset($row->cnbenefits_description) ){
+				$entry->cnbenefits['\'description\''] = $row->cnbenefits_description;
+			}
+			if( isset($row->cnbenefits_categories) ){
+				$entry->cnbenefits['\'categories\''] = $row->cnbenefits_categories;
+			}
+			if( isset($row->cnbenefits_wsuaa_discounts) ){
+				$entry->cnbenefits['\'wsuaa_discounts\''] = $row->cnbenefits_wsuaa_discounts;
+			}
+			if( isset($row->cnbenefits_online) ){
+				$entry->cnbenefits['\'online\''] = $row->cnbenefits_online;
+			}
+			return $entry;
+		}		
+
 		public static function loadTextdomain() {
 
 			// Plugin's unique textdomain string.
