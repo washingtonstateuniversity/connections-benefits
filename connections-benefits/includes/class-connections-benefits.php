@@ -19,7 +19,7 @@ if (!class_exists('Connections_benefits')) {
 				
 				// Since we're using a custom field, we need to add our own sanitization method.
 				add_filter( 'cn_meta_sanitize_field-entry_benefit', array( __CLASS__, 'sanitize') );
-
+				add_filter( 'cncsv_map_import_fields', array( __CLASS__, 'map_import_fields' ));
             }
 			// Register the metabox and fields.
 			add_action( 'cn_metabox', array( __CLASS__, 'registerMetabox') );
@@ -42,16 +42,26 @@ if (!class_exists('Connections_benefits')) {
                 add_filter('cn_register_settings_sections', array( $this, 'registerSettingsSections' ));
                 add_filter('cn_register_settings_fields', array( $this, 'registerSettingsFields' ));
                 $this->settings->init();
-                //add_action( 'admin_init' , array( $this, 'adminInit' ) );
                 add_action('init', array( $this, 'init' ));
             } else {
                 add_action('admin_notices', create_function('', 'echo \'<div id="message" class="error"><p><strong>ERROR:</strong> Connections must be installed and active in order to use Form.</p></div>\';'));
             }
         }
-        public function adminInit() {
-        }
         public function init() {
         }
+		
+		public static function map_import_fields( $fields ){
+			
+			$fields['cnbenefits_description'] = 'Benefits | Description';
+			$fields['cnbenefits_categories'] = 'Benefits | Categories';
+			$fields['cnbenefits_wsuaa_discounts'] = 'Benefits | WSUAA discounts';
+			$fields['cnbenefits_online'] = 'Benefits | online discount';
+			//var_dump($fields);die();
+
+			return $fields;
+		}
+		
+		
 		
 		public static function loadTextdomain() {
 
