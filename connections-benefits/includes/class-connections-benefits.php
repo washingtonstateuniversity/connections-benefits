@@ -55,29 +55,38 @@ if (!class_exists('Connections_benefits')) {
         }
 		
 		public static function map_import_fields( $fields ){
-			
 			$fields['cnbenefits_description'] = 'Benefits | Description';
 			$fields['cnbenefits_categories'] = 'Benefits | Categories';
 			$fields['cnbenefits_wsuaa_discounts'] = 'Benefits | WSUAA discounts';
 			$fields['cnbenefits_online'] = 'Benefits | online discount';
-			//var_dump($fields);die();
-
 			return $fields;
 		}
-		public static function import_fields( $entry, $row ){
+		public static function import_fields( $entryId, $row ){
+			$tmp=array(
+				'description'=>'',
+				'wsuaa_discounts'=>1,
+				'categories'=>'',
+				'online'=>0
+			);	
 			if( isset($row->cnbenefits_description) ){
-				$entry->cnbenefits['\'description\''] = $row->cnbenefits_description;
+				$tmp['description'] = $row->cnbenefits_description;
 			}
 			if( isset($row->cnbenefits_categories) ){
-				$entry->cnbenefits['\'categories\''] = $row->cnbenefits_categories;
+				$tmp['categories'] = $row->cnbenefits_categories;
 			}
 			if( isset($row->cnbenefits_wsuaa_discounts) ){
-				$entry->cnbenefits['\'wsuaa_discounts\''] = $row->cnbenefits_wsuaa_discounts;
+				$tmp['wsuaa_discounts'] = $row->cnbenefits_wsuaa_discounts;
 			}
 			if( isset($row->cnbenefits_online) ){
-				$entry->cnbenefits['\'online\''] = $row->cnbenefits_online;
+				$tmp['online'] = $row->cnbenefits_online;
 			}
-			return $entry;
+			cnEntry_Action::meta('update', $entryId, array(
+				array(
+					'key' => "cnbenefits",
+					'value' =>$tmp
+				)
+			));
+			return;
 		}		
 
 		public static function loadTextdomain() {
@@ -124,7 +133,7 @@ if (!class_exists('Connections_benefits')) {
 			$metabox::add( $atts );
 		}
 		public static function field( $field, $value ) {
-			
+			//this should be a merge.. no?
 			if(empty($value)){
 				$value=array(
 					'description'=>'',
