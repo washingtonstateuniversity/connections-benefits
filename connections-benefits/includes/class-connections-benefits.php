@@ -19,7 +19,10 @@ if (!class_exists('Connections_benefits')) {
 				
 				// Since we're using a custom field, we need to add our own sanitization method.
 				add_filter( 'cn_meta_sanitize_field-entry_benefit', array( __CLASS__, 'sanitize') );
-
+				add_filter( 'cncsv_map_import_fields', array( __CLASS__, 'map_import_fields' ));
+				add_action( 'cncsv_import_fields', array($this, 'import_fields' ),10,2);
+				
+				
             }
 			// Register the metabox and fields.
 			add_action( 'cn_metabox', array( __CLASS__, 'registerMetabox') );
@@ -42,17 +45,53 @@ if (!class_exists('Connections_benefits')) {
                 add_filter('cn_register_settings_sections', array( $this, 'registerSettingsSections' ));
                 add_filter('cn_register_settings_fields', array( $this, 'registerSettingsFields' ));
                 $this->settings->init();
-                //add_action( 'admin_init' , array( $this, 'adminInit' ) );
                 add_action('init', array( $this, 'init' ));
             } else {
                 add_action('admin_notices', create_function('', 'echo \'<div id="message" class="error"><p><strong>ERROR:</strong> Connections must be installed and active in order to use Form.</p></div>\';'));
             }
         }
-        public function adminInit() {
-        }
         public function init() {
         }
 		
+		public static function map_import_fields( $fields ){
+			$fields['cnbenefits_description'] = 'Benefits | Description';
+			$fields['cnbenefits_categories'] = 'Benefits | Categories';
+			$fields['cnbenefits_wsuaa_discounts'] = 'Benefits | WSUAA discounts';
+			$fields['cnbenefits_members_card'] = 'Benefits | Must have card';
+			$fields['cnbenefits_online'] = 'Benefits | online discount';
+			return $fields;
+		}
+		public  function import_fields( $entryId, $row ){
+			$tmp=array(
+				'description'=>'',
+				'wsuaa_discounts'=>1,
+				'members_card'=>0,
+				'categories'=>'',
+				'online'=>0
+			);	
+			if( isset($row->cnbenefits_description) ){
+				$tmp['description'] = $row->cnbenefits_description;
+			}
+			if( isset($row->cnbenefits_categories) ){
+				$tmp['categories'] = $row->cnbenefits_categories;
+			}
+			if( isset($row->cnbenefits_wsuaa_discounts) ){
+				$tmp['wsuaa_discounts'] = $row->cnbenefits_wsuaa_discounts;
+			}
+			if( isset($row->cnbenefits_members_card) ){
+				$tmp['members_card'] = $row->cnbenefits_members_card;
+			}
+			if( isset($row->cnbenefits_online) ){
+				$tmp['online'] = $row->cnbenefits_online;
+			}
+			cnEntry_Action::meta('add', $entryId, array(
+				array(
+					'key' => "cnbenefits",
+					'value' =>$tmp
+				)
+			));
+		}		
+
 		public static function loadTextdomain() {
 
 			// Plugin's unique textdomain string.
@@ -97,35 +136,32 @@ if (!class_exists('Connections_benefits')) {
 			$metabox::add( $atts );
 		}
 		public static function field( $field, $value ) {
-			
+			//this should be a merge.. no?
 			if(empty($value)){
 				$value=array(
 					'description'=>'',
 					'wsuaa_discounts'=>1,
+					'members_card'=>0,
 					'categories'=>'',
 					'online'=>0
 				);	
 			}
 			//var_dump($value);
 			$out ="";
-if (!is_admin()) {			
-$out .='			
-<div id="metabox-bio" class="postbox"><h3 class="hndle"><span>Biography</span></h3><div class="cnf-inside"><div id="wp-cn-form-bio-wrap" class="wp-core-ui wp-editor-wrap tmce-active">';
-}
-			
-			
-			
+
 			$out .='
-			<div>Benefit description:
+			<div><label>Benefit description:
 			<br/><textarea name="cnbenefits[\'description\']" rows="5" cols="30">'.$value['description'].'</textarea>
+			</label>
 			<br/><br/>
 			
-			<label>Is this offer for only WSUAA Members?:</label><br/>
+			<label>Is this offer for only WSUAA Members?:<br/>
             
 			<input name="cnbenefits[\'wsuaa_discounts\']" id="discounts_0_wsuaa_discounts"  type="radio" value="1" '.($value['description']>0?"checked":"").'> Yes 
             <input name="cnbenefits[\'wsuaa_discounts\']" id="discounts_0_wsuaa_discounts" type="radio" value="0" '.($value['description']>0?"":"checked").'> No 
+			</label>
 			<br/><br/>
-            <label>Discount Category:</label>
+            <label>Discount Category:
             <br/>
 			<select name="cnbenefits[\'categories\']" id="discounts_0_categories_id">
 				<option value="" '.($value['categories']==""?"selected":"").'></option>
@@ -139,19 +175,20 @@ $out .='
 				<option value="8" '.($value['categories']=="8"?"selected":"").'>Services</option>
 				<option value="9" '.($value['categories']=="9"?"selected":"").'>Shopping</option>
 				<option value="10" '.($value['categories']=="10"?"selected":"").'>Travel</option>
-			</select> 	<br/><br/>
-			<label>Is this an online offer?:</label>
-            <br/>
-            <input name="cnbenefits[\'online\']" id="discounts_0_online" type="radio" value="1" '.($value['online']>0?"checked":"").'> Yes 
-            <input name="cnbenefits[\'online\']" id="discounts_0_online" type="radio" value="0" '.($value['online']>0?"":"checked").'> No 
+			</select></label> 	<br/><br/>
+			<label>Must have member card?:
+				<br/>
+				<input name="cnbenefits[\'members_card\']" id="discounts_0_members_only" type="radio" value="1" '.($value['members_card']>0?"checked":"").'> Yes 
+				<input name="cnbenefits[\'members_card\']" id="discounts_0_members_only" type="radio" value="0" '.($value['members_card']>0?"":"checked").'> No 
+			</label><br/><br/>
+			<label>Is this an online offer?:
+				<br/>
+				<input name="cnbenefits[\'online\']" id="discounts_0_online" type="radio" value="1" '.($value['online']>0?"checked":"").'> Yes 
+				<input name="cnbenefits[\'online\']" id="discounts_0_online" type="radio" value="0" '.($value['online']>0?"":"checked").'> No 
+			</label>
 			<br/>
             <!--<em><strong>Note:</strong> to check if the online use is WSUAA Member have your web developer use this url http://cbn.wsu.edu/Business/is_member.castle with a url query of "Wsuid".  <br>The example is [ <strong>http://cbn.wsu.edu/Business/is_member.castle?Wsuid=47614823</strong> ]</em>-->
 			';
-if (!is_admin()) {			
-$out .='
-</div>
-</div>';
-}
 
 			printf( '%s', $out);
  
@@ -167,14 +204,14 @@ $out .='
 		 * @return text
 		 */
 		public static function sanitize( $value ) {
-			var_dump($value);
+			
 			$return=array(
-				'description'=>isset($value['\'description\''])?cnSanitize::string( 'text', $value['\'description\''] ):"",
+				'description'=>isset($value['\'description\''])?$value['\'description\'']:"",
 				'wsuaa_discounts'=>isset($value['\'wsuaa_discounts\''])?$value['\'wsuaa_discounts\'']:"",
 				'categories'=>isset($value['\'categories\''])?$value['\'categories\'']:"",
 				'online'=>isset($value['\'online\''])?$value['\'online\'']:0
 			);
-			var_dump($return);
+			
 			return $return ;
 		}
 		
